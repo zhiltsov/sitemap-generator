@@ -11,6 +11,9 @@ class FtpManager
 	/** @var resource */
 	private $connect;
 
+	/** @var bool */
+	public $error = false;
+
 	/**
 	 * @param SiteModel $o
 	 */
@@ -27,18 +30,32 @@ class FtpManager
 		ftp_close($this->connect);
 	}
 
+	/**
+	 * @return bool
+	 */
 	public function login()
 	{
 		if (!@ftp_login($this->connect, $this->resource->ftpLogin, $this->resource->ftpPassword)) {
 			$this->error('Авторизация не пройдена');
+			return false;
 		}
+
+		return true;
 	}
 
+	/**
+	 * @param resource $file
+	 * @return bool
+	 */
 	public function saveSiteMapFile($file)
 	{
 		if (!ftp_fput($this->connect, $this->resource->ftpSiteMapPath, $file, FTP_ASCII)) {
 			$this->error('Невозможно загрузить Sitemap');
+
+			return false;
 		}
+
+		return true;
 	}
 
 	/**
@@ -46,6 +63,7 @@ class FtpManager
 	 */
 	public function error($message)
 	{
+		$this->error = true;
 		$this->resource->error($message);
 	}
 }

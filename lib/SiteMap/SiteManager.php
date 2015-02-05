@@ -47,14 +47,17 @@ class SiteManager
 			$scanner = new Сrawler($site);
 			$generator = new Generator();
 
-			foreach ($scanner->getPages() as $url) {
-				$generator->addUrl($url, date('Y-m-d'));
-			};
-			$generator->save();
+			if ($scanner->getPages()) {
+				foreach ($scanner->getPages() as $url) {
+					$generator->addUrl($url, date('Y-m-d'));
+				};
+				$generator->save();
 
-			$ftp = new FtpManager($site);
-			$ftp->login();
-			$ftp->saveSiteMapFile($generator->save());
+				$ftp = new FtpManager($site);
+				!$ftp->error && $ftp->login() && $ftp->saveSiteMapFile($generator->save());
+			} else {
+				error_log(sprintf('[%s] Не удалось установить соединение', $site->domain));
+			}
 		}
 	}
 }

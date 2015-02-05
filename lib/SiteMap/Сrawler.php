@@ -81,18 +81,38 @@ class Сrawler
 	}
 
 	/**
+	 * HEAD запрос
+	 * Проверка типа контента без его предварительной загрузки
+	 * @param string $url
+	 * @return bool
+	 */
+	private static function isRequestValid($url) {
+		$curl = curl_init($url);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($curl, CURLOPT_NOBODY, true); // HEAD запрос
+		curl_exec($curl);
+		$statusCode = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
+		$contentType = curl_getinfo($curl, CURLINFO_CONTENT_TYPE);
+		curl_close($curl);
+
+		return $statusCode === 200 && strripos($contentType, 'text/html') !== false;
+	}
+
+	/**
 	 * @param string $url
 	 * @return string
 	 */
 	private static function request($url)
 	{
-		$curl = curl_init($url);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-		$response = curl_exec($curl);
-		$statusCode = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
-		curl_close($curl);
+		$response = null;
+		if (self::isRequestValid($url)) {
+			$curl = curl_init($url);
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			$response = curl_exec($curl);
+			curl_close($curl);
+		}
 
-		return $response && $statusCode < 400 ? $response : null;
+		return $response;
 	}
 
 	/**

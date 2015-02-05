@@ -24,5 +24,5 @@ try {
 	\SiteMap\SiteManager::loadConfig($iniFile);
 	\SiteMap\SiteManager::run();
 } catch (\Exception $e) {
-	echo $e->getMessage() . PHP_EOL;
+	error_log($e->getMessage());
 }

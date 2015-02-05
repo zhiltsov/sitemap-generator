@@ -32,10 +32,9 @@ class SiteModel
 
 	/**
 	 * @param string $message
-	 * @throws \Exception
 	 */
 	public function error($message)
 	{
-		throw new \Exception(sprintf('[%s] %s', $this->domain, $message));
+		error_log(sprintf('[%s] %s', $this->domain, $message));
 	}
 }
