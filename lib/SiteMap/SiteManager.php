@@ -44,7 +44,7 @@ class SiteManager
 	public static function run()
 	{
 		foreach (self::$sites as $site) {
-			$scanner = new Сrawler($site);
+			$scanner = new Crawler($site);
 			$generator = new Generator();
 
 			if ($scanner->getPages()) {
