@@ -1,7 +1,7 @@
 <?php
 namespace SiteMap;
 
-class Сrawler
+class Crawler
 {
 	private $pages;
 	private $links;
