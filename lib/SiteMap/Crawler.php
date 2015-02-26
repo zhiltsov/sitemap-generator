@@ -3,15 +3,34 @@ namespace SiteMap;
 
 class Crawler
 {
-	private $pages;
-	private $links;
-	private $siteModel;
-
 	const DEFAULT_SCHEME = 'http';
 
+	/** @var array */
+	private $pages = [];
+
+	/** @var CurlResponse[] */
+	private $pageInfo = [];
+
+	/** @var array */
+	private $links = [];
+
+	/** @var SiteModel */
+	private $siteModel;
+
+	/**
+	 * @return array
+	 */
 	public function getPages()
 	{
 		return $this->pages;
+	}
+
+	/**
+	 * @return CurlResponse[]
+	 */
+	public function getPageInfo()
+	{
+		return $this->pageInfo;
 	}
 
 	/**
@@ -27,11 +46,15 @@ class Crawler
 
 			if (!self::cleanUrl($link)) continue;
 			$link = self::buildUrl($link);
-			if ($data = self::request($link)) {
+			$response = new CurlResponse();
+			$response->url = $link;
+			if (self::request($link, $response)) {
+				$this->pageInfo[] = $response;
 				$this->pages[] = $link;
+
 				$match = $match2 = [];
-				preg_match_all('#<a(.*)?href="([^":]+)"#', $data, $match);
-				preg_match_all("#<a(.*)?href='([^':]+)'#", $data, $match2);
+				preg_match_all('#<a(.*)?href="([^":]+)"#', $response->content, $match);
+				preg_match_all("#<a(.*)?href='([^':]+)'#", $response->content, $match2);
 				if (isset($match[2]) || isset($match2[2])) {
 					$match = array_merge($match[2], $match2[2]);
 					foreach ($match as $url) {
@@ -84,35 +107,38 @@ class Crawler
 	 * HEAD запрос
 	 * Проверка типа контента без его предварительной загрузки
 	 * @param string $url
+	 * @param CurlResponse $response
 	 * @return bool
 	 */
-	private static function isRequestValid($url) {
+	private static function isRequestValid($url, CurlResponse $response)
+	{
 		$curl = curl_init($url);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($curl, CURLOPT_HEADER, true);
 		curl_setopt($curl, CURLOPT_NOBODY, true); // HEAD запрос
-		curl_exec($curl);
-		$statusCode = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
-		$contentType = curl_getinfo($curl, CURLINFO_CONTENT_TYPE);
+		$response->parseHeaders(curl_exec($curl));
+		$response->statusCode = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
+		$response->contentType = curl_getinfo($curl, CURLINFO_CONTENT_TYPE);
 		curl_close($curl);
 
-		return $statusCode === 200 && strripos($contentType, 'text/html') !== false;
+		return $response->statusCode === 200 && strripos($response->contentType, 'text/html') !== false;
 	}
 
 	/**
 	 * @param string $url
-	 * @return string
+	 * @param CurlResponse $response
+	 * @return bool
 	 */
-	private static function request($url)
+	private static function request($url, CurlResponse $response)
 	{
-		$response = null;
-		if (self::isRequestValid($url)) {
+		if (self::isRequestValid($url, $response)) {
 			$curl = curl_init($url);
 			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-			$response = curl_exec($curl);
+			$response->content = curl_exec($curl);
 			curl_close($curl);
 		}
 
-		return $response;
+		return (bool)$response->content;
 	}
 
 	/**

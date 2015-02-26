@@ -3,6 +3,8 @@ namespace SiteMap;
 
 class SiteManager
 {
+	const DATE_FORMAT = 'Y-m-d';
+
 	/** @var string */
 	private static $iniFile;
 
@@ -47,9 +49,12 @@ class SiteManager
 			$scanner = new Crawler($site);
 			$generator = new Generator();
 
-			if ($scanner->getPages()) {
-				foreach ($scanner->getPages() as $url) {
-					$generator->addUrl($url, date('Y-m-d'));
+			if ($scanner->getPageInfo()) {
+				foreach ($scanner->getPageInfo() as $o) {
+					$generator->addUrl(
+						$o->url,
+						date(self::DATE_FORMAT, $o->lastModified ? $o->lastModified : time())
+					);
 				};
 				$generator->save();
 
